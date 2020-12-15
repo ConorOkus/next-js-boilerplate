@@ -1,0 +1,10 @@
+# prettier-ignore
+overwrite: true
+schema: "http://hellobitcoin.local/graphql"
+documents: "graphql/**/*.graphql"
+generates:
+  ./types/types.ts:
+    plugins:
+      - "typescript"
+      - "typescript-operations"
+      - "typescript-react-apollo"
