@@ -5,7 +5,7 @@ let apolloClient;
 
 function createApolloClient() {
   return new ApolloClient({
-    uri: "GRAPHQL_ENDPOINT",
+    uri: "http://hellobitcoin.local/graphql",
     cache: new InMemoryCache(),
     ssrMode: typeof window === "undefined",
   });
