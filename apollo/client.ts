@@ -1,12 +1,15 @@
 import { useMemo } from "react";
-import { ApolloClient, InMemoryCache } from "@apollo/client";
+import { ApolloClient, InMemoryCache, createHttpLink } from "@apollo/client";
 
 let apolloClient;
 
 function createApolloClient() {
   return new ApolloClient({
-    uri: "http://hellobitcoin.local/graphql",
+    uri: process.env.WORDPRESS_API_URL,
     cache: new InMemoryCache(),
+    headers: {
+      authorization: `Bearer ${process.env.WORDPRESS_AUTH_REFRESH_TOKEN}`,
+    },
     ssrMode: typeof window === "undefined",
   });
 }

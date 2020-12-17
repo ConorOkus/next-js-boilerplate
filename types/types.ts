@@ -2323,10 +2323,35 @@ export type User = Node & UniformResourceIdentifiable & Commenter & DatabaseIden
    */
   id: Scalars['ID'];
   /**
+   * Whether the JWT User secret has been revoked. If the secret has been revoked, auth tokens will not be issued until an admin, or user with proper capabilities re-issues a secret for the user.
+   * @deprecated 
+   */
+  isJwtAuthSecretRevoked: Scalars['Boolean'];
+  /**
    * Whether the object is restricted from the current viewer
    * @deprecated 
    */
   isRestricted?: Maybe<Scalars['Boolean']>;
+  /**
+   * The expiration for the JWT Token for the user. If not set custom for the user, it will use the default sitewide expiration setting
+   * @deprecated 
+   */
+  jwtAuthExpiration?: Maybe<Scalars['String']>;
+  /**
+   * A JWT token that can be used in future requests for authentication/authorization
+   * @deprecated 
+   */
+  jwtAuthToken?: Maybe<Scalars['String']>;
+  /**
+   * A JWT token that can be used in future requests to get a refreshed jwtAuthToken. If the refresh token used in a request is revoked or otherwise invalid, a valid Auth token will NOT be issued in the response headers.
+   * @deprecated 
+   */
+  jwtRefreshToken?: Maybe<Scalars['String']>;
+  /**
+   * A unique secret tied to the users JWT token that can be revoked or refreshed. Revoking the secret prevents JWT tokens from being issued to the user. Refreshing the token invalidates previously issued tokens, but allows new tokens to be issued.
+   * @deprecated 
+   */
+  jwtUserSecret?: Maybe<Scalars['String']>;
   /**
    * Last name of the user. This is equivalent to the WP_User-&gt;user_last_name property.
    * @deprecated 
@@ -8447,6 +8472,16 @@ export type RootMutation = {
   /** @deprecated  */
   increaseCount?: Maybe<Scalars['Int']>;
   /**
+   * The payload for the login mutation
+   * @deprecated 
+   */
+  login?: Maybe<LoginPayload>;
+  /**
+   * The payload for the refreshJwtAuthToken mutation
+   * @deprecated 
+   */
+  refreshJwtAuthToken?: Maybe<RefreshJwtAuthTokenPayload>;
+  /**
    * The payload for the registerUser mutation
    * @deprecated 
    */
@@ -8616,6 +8651,18 @@ export type RootMutationDeleteUserArgs = {
 /** The root mutation */
 export type RootMutationIncreaseCountArgs = {
   count?: Maybe<Scalars['Int']>;
+};
+
+
+/** The root mutation */
+export type RootMutationLoginArgs = {
+  input: LoginInput;
+};
+
+
+/** The root mutation */
+export type RootMutationRefreshJwtAuthTokenArgs = {
+  input: RefreshJwtAuthTokenInput;
 };
 
 
@@ -9094,8 +9141,12 @@ export type CreateUserInput = {
   nickname?: Maybe<Scalars['String']>;
   /** A string that contains the plain text password for the user. */
   password?: Maybe<Scalars['String']>;
+  /** If true, this will refresh the users JWT secret. */
+  refreshJwtUserSecret?: Maybe<Scalars['Boolean']>;
   /** The date the user registered. Format is Y-m-d H:i:s. */
   registered?: Maybe<Scalars['String']>;
+  /** If true, this will revoke the users JWT secret. If false, this will unrevoke the JWT secret AND issue a new one. To revoke, the user must have proper capabilities to edit users JWT secrets. */
+  revokeJwtUserSecret?: Maybe<Scalars['Boolean']>;
   /** A string for whether to enable the rich editor or not. False if not empty. */
   richEditing?: Maybe<Scalars['String']>;
   /** An array of roles to be assigned to the user. */
@@ -9319,6 +9370,56 @@ export type DeleteUserPayload = {
   user?: Maybe<User>;
 };
 
+/** Input for the login mutation */
+export type LoginInput = {
+  clientMutationId?: Maybe<Scalars['String']>;
+  /** The plain-text password for the user logging in. */
+  password: Scalars['String'];
+  /** The username used for login. Typically a unique or email address depending on specific configuration */
+  username: Scalars['String'];
+};
+
+/** The payload for the login mutation */
+export type LoginPayload = {
+  __typename?: 'LoginPayload';
+  /**
+   * JWT Token that can be used in future requests for Authentication
+   * @deprecated 
+   */
+  authToken?: Maybe<Scalars['String']>;
+  /** @deprecated  */
+  clientMutationId?: Maybe<Scalars['String']>;
+  /**
+   * A JWT token that can be used in future requests to get a refreshed jwtAuthToken. If the refresh token used in a request is revoked or otherwise invalid, a valid Auth token will NOT be issued in the response headers.
+   * @deprecated 
+   */
+  refreshToken?: Maybe<Scalars['String']>;
+  /**
+   * The user that was logged in
+   * @deprecated 
+   */
+  user?: Maybe<User>;
+};
+
+/** Input for the refreshJwtAuthToken mutation */
+export type RefreshJwtAuthTokenInput = {
+  clientMutationId?: Maybe<Scalars['String']>;
+  /** A valid, previously issued JWT refresh token. If valid a new Auth token will be provided. If invalid, expired, revoked or otherwise invalid, a new AuthToken will not be provided. */
+  jwtRefreshToken: Scalars['String'];
+};
+
+/** The payload for the refreshJwtAuthToken mutation */
+export type RefreshJwtAuthTokenPayload = {
+  __typename?: 'RefreshJwtAuthTokenPayload';
+  /**
+   * JWT Token that can be used in future requests for Authentication
+   * @deprecated 
+   */
+  authToken?: Maybe<Scalars['String']>;
+  /** @deprecated  */
+  clientMutationId?: Maybe<Scalars['String']>;
+};
+
 /** Input for the registerUser mutation */
 export type RegisterUserInput = {
   /** User's AOL IM account. */
@@ -9344,8 +9445,12 @@ export type RegisterUserInput = {
   nickname?: Maybe<Scalars['String']>;
   /** A string that contains the plain text password for the user. */
   password?: Maybe<Scalars['String']>;
+  /** If true, this will refresh the users JWT secret. */
+  refreshJwtUserSecret?: Maybe<Scalars['Boolean']>;
   /** The date the user registered. Format is Y-m-d H:i:s. */
   registered?: Maybe<Scalars['String']>;
+  /** If true, this will revoke the users JWT secret. If false, this will unrevoke the JWT secret AND issue a new one. To revoke, the user must have proper capabilities to edit users JWT secrets. */
+  revokeJwtUserSecret?: Maybe<Scalars['Boolean']>;
   /** A string for whether to enable the rich editor or not. False if not empty. */
   richEditing?: Maybe<Scalars['String']>;
   /** A string that contains the user's username. */
@@ -9677,8 +9782,12 @@ export type UpdateUserInput = {
   nickname?: Maybe<Scalars['String']>;
   /** A string that contains the plain text password for the user. */
   password?: Maybe<Scalars['String']>;
+  /** If true, this will refresh the users JWT secret. */
+  refreshJwtUserSecret?: Maybe<Scalars['Boolean']>;
   /** The date the user registered. Format is Y-m-d H:i:s. */
   registered?: Maybe<Scalars['String']>;
+  /** If true, this will revoke the users JWT secret. If false, this will unrevoke the JWT secret AND issue a new one. To revoke, the user must have proper capabilities to edit users JWT secrets. */
+  revokeJwtUserSecret?: Maybe<Scalars['Boolean']>;
   /** A string for whether to enable the rich editor or not. False if not empty. */
   richEditing?: Maybe<Scalars['String']>;
   /** An array of roles to be assigned to the user. */
@@ -10661,6 +10770,100 @@ export type PostObjectUnion = Post | Page | MediaItem;
 
 export type TermObjectUnion = Category | Tag | PostFormat;
 
+export type GetPostBySlugQueryVariables = Exact<{
+  id: Scalars['ID'];
+  idType: PostIdType;
+}>;
+
+
+export type GetPostBySlugQuery = (
+  { __typename?: 'RootQuery' }
+  & { post?: Maybe<(
+    { __typename?: 'Post' }
+    & Pick<Post, 'content'>
+    & { revisions?: Maybe<(
+      { __typename?: 'PostToRevisionConnection' }
+      & { edges?: Maybe<Array<Maybe<(
+        { __typename?: 'PostToRevisionConnectionEdge' }
+        & { node?: Maybe<(
+          { __typename?: 'Post' }
+          & Pick<Post, 'title' | 'excerpt' | 'content'>
+          & { author?: Maybe<(
+            { __typename?: 'NodeWithAuthorToUserConnectionEdge' }
+            & { node?: Maybe<(
+              { __typename?: 'User' }
+              & AuthorFieldsFragment
+            )> }
+          )> }
+        )> }
+      )>>> }
+    )> }
+    & PostFieldsFragment
+  )> }
+);
+
+export type AuthorFieldsFragment = (
+  { __typename?: 'User' }
+  & Pick<User, 'name' | 'firstName' | 'lastName'>
+  & { avatar?: Maybe<(
+    { __typename?: 'Avatar' }
+    & Pick<Avatar, 'url'>
+  )> }
+);
+
+export type PostFieldsFragment = (
+  { __typename?: 'Post' }
+  & Pick<Post, 'title' | 'excerpt' | 'slug' | 'date'>
+  & { featuredImage?: Maybe<(
+    { __typename?: 'NodeWithFeaturedImageToMediaItemConnectionEdge' }
+    & { node?: Maybe<(
+      { __typename?: 'MediaItem' }
+      & Pick<MediaItem, 'sourceUrl'>
+    )> }
+  )>, author?: Maybe<(
+    { __typename?: 'NodeWithAuthorToUserConnectionEdge' }
+    & { node?: Maybe<(
+      { __typename?: 'User' }
+      & AuthorFieldsFragment
+    )> }
+  )>, categories?: Maybe<(
+    { __typename?: 'PostToCategoryConnection' }
+    & { edges?: Maybe<Array<Maybe<(
+      { __typename?: 'PostToCategoryConnectionEdge' }
+      & { node?: Maybe<(
+        { __typename?: 'Category' }
+        & Pick<Category, 'name'>
+      )> }
+    )>>> }
+  )>, tags?: Maybe<(
+    { __typename?: 'PostToTagConnection' }
+    & { edges?: Maybe<Array<Maybe<(
+      { __typename?: 'PostToTagConnectionEdge' }
+      & { node?: Maybe<(
+        { __typename?: 'Tag' }
+        & Pick<Tag, 'name'>
+      )> }
+    )>>> }
+  )> }
+);
+
+export type GetPostsWithSlugQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetPostsWithSlugQuery = (
+  { __typename?: 'RootQuery' }
+  & { posts?: Maybe<(
+    { __typename?: 'RootQueryToPostConnection' }
+    & { edges?: Maybe<Array<Maybe<(
+      { __typename?: 'RootQueryToPostConnectionEdge' }
+      & { node?: Maybe<(
+        { __typename?: 'Post' }
+        & Pick<Post, 'slug'>
+      )> }
+    )>>> }
+  )> }
+);
+
 export type GetPostsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -10672,12 +10875,22 @@ export type GetPostsQuery = (
       { __typename?: 'RootQueryToPostConnectionEdge' }
       & { node?: Maybe<(
         { __typename?: 'Post' }
-        & Pick<Post, 'title' | 'slug' | 'date'>
+        & Pick<Post, 'title' | 'excerpt' | 'slug' | 'date'>
         & { featuredImage?: Maybe<(
           { __typename?: 'NodeWithFeaturedImageToMediaItemConnectionEdge' }
           & { node?: Maybe<(
             { __typename?: 'MediaItem' }
             & Pick<MediaItem, 'sourceUrl'>
+          )> }
+        )>, author?: Maybe<(
+          { __typename?: 'NodeWithAuthorToUserConnectionEdge' }
+          & { node?: Maybe<(
+            { __typename?: 'User' }
+            & Pick<User, 'name' | 'firstName' | 'lastName'>
+            & { avatar?: Maybe<(
+              { __typename?: 'Avatar' }
+              & Pick<Avatar, 'url'>
+            )> }
           )> }
         )> }
       )> }
@@ -10685,18 +10898,176 @@ export type GetPostsQuery = (
   )> }
 );
 
+export type PreviewPostQueryVariables = Exact<{
+  id: Scalars['ID'];
+  idType: PostIdType;
+}>;
 
+
+export type PreviewPostQuery = (
+  { __typename?: 'RootQuery' }
+  & { post?: Maybe<(
+    { __typename?: 'Post' }
+    & Pick<Post, 'databaseId' | 'slug' | 'status'>
+  )> }
+);
+
+export const AuthorFieldsFragmentDoc = gql`
+    fragment AuthorFields on User {
+  name
+  firstName
+  lastName
+  avatar {
+    url
+  }
+}
+    `;
+export const PostFieldsFragmentDoc = gql`
+    fragment PostFields on Post {
+  title
+  excerpt
+  slug
+  date
+  featuredImage {
+    node {
+      sourceUrl
+    }
+  }
+  author {
+    node {
+      ...AuthorFields
+    }
+  }
+  categories {
+    edges {
+      node {
+        name
+      }
+    }
+  }
+  tags {
+    edges {
+      node {
+        name
+      }
+    }
+  }
+}
+    ${AuthorFieldsFragmentDoc}`;
+export const GetPostBySlugDocument = gql`
+    query getPostBySlug($id: ID!, $idType: PostIdType!) {
+  post(id: $id, idType: $idType) {
+    ...PostFields
+    content
+    revisions(first: 1, where: {orderby: {field: MODIFIED, order: DESC}}) {
+      edges {
+        node {
+          title
+          excerpt
+          content
+          author {
+            node {
+              ...AuthorFields
+            }
+          }
+        }
+      }
+    }
+  }
+}
+    ${PostFieldsFragmentDoc}
+${AuthorFieldsFragmentDoc}`;
+
+/**
+ * __useGetPostBySlugQuery__
+ *
+ * To run a query within a React component, call `useGetPostBySlugQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetPostBySlugQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetPostBySlugQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *      idType: // value for 'idType'
+ *   },
+ * });
+ */
+export function useGetPostBySlugQuery(baseOptions: Apollo.QueryHookOptions<GetPostBySlugQuery, GetPostBySlugQueryVariables>) {
+        return Apollo.useQuery<GetPostBySlugQuery, GetPostBySlugQueryVariables>(GetPostBySlugDocument, baseOptions);
+      }
+export function useGetPostBySlugLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetPostBySlugQuery, GetPostBySlugQueryVariables>) {
+          return Apollo.useLazyQuery<GetPostBySlugQuery, GetPostBySlugQueryVariables>(GetPostBySlugDocument, baseOptions);
+        }
+export type GetPostBySlugQueryHookResult = ReturnType<typeof useGetPostBySlugQuery>;
+export type GetPostBySlugLazyQueryHookResult = ReturnType<typeof useGetPostBySlugLazyQuery>;
+export type GetPostBySlugQueryResult = Apollo.QueryResult<GetPostBySlugQuery, GetPostBySlugQueryVariables>;
+export function refetchGetPostBySlugQuery(variables?: GetPostBySlugQueryVariables) {
+      return { query: GetPostBySlugDocument, variables: variables }
+    }
+export const GetPostsWithSlugDocument = gql`
+    query getPostsWithSlug {
+  posts(first: 20) {
+    edges {
+      node {
+        slug
+      }
+    }
+  }
+}
+    `;
+
+/**
+ * __useGetPostsWithSlugQuery__
+ *
+ * To run a query within a React component, call `useGetPostsWithSlugQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetPostsWithSlugQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetPostsWithSlugQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGetPostsWithSlugQuery(baseOptions?: Apollo.QueryHookOptions<GetPostsWithSlugQuery, GetPostsWithSlugQueryVariables>) {
+        return Apollo.useQuery<GetPostsWithSlugQuery, GetPostsWithSlugQueryVariables>(GetPostsWithSlugDocument, baseOptions);
+      }
+export function useGetPostsWithSlugLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetPostsWithSlugQuery, GetPostsWithSlugQueryVariables>) {
+          return Apollo.useLazyQuery<GetPostsWithSlugQuery, GetPostsWithSlugQueryVariables>(GetPostsWithSlugDocument, baseOptions);
+        }
+export type GetPostsWithSlugQueryHookResult = ReturnType<typeof useGetPostsWithSlugQuery>;
+export type GetPostsWithSlugLazyQueryHookResult = ReturnType<typeof useGetPostsWithSlugLazyQuery>;
+export type GetPostsWithSlugQueryResult = Apollo.QueryResult<GetPostsWithSlugQuery, GetPostsWithSlugQueryVariables>;
+export function refetchGetPostsWithSlugQuery(variables?: GetPostsWithSlugQueryVariables) {
+      return { query: GetPostsWithSlugDocument, variables: variables }
+    }
 export const GetPostsDocument = gql`
     query getPosts {
-  posts(first: 5) {
+  posts(first: 20, where: {orderby: {field: DATE, order: DESC}}) {
     edges {
       node {
         title
+        excerpt
         slug
         date
         featuredImage {
           node {
             sourceUrl
+          }
+        }
+        author {
+          node {
+            name
+            firstName
+            lastName
+            avatar {
+              url
+            }
           }
         }
       }
@@ -10731,4 +11102,43 @@ export type GetPostsLazyQueryHookResult = ReturnType<typeof useGetPostsLazyQuery
 export type GetPostsQueryResult = Apollo.QueryResult<GetPostsQuery, GetPostsQueryVariables>;
 export function refetchGetPostsQuery(variables?: GetPostsQueryVariables) {
       return { query: GetPostsDocument, variables: variables }
+    }
+export const PreviewPostDocument = gql`
+    query PreviewPost($id: ID!, $idType: PostIdType!) {
+  post(id: $id, idType: $idType) {
+    databaseId
+    slug
+    status
+  }
+}
+    `;
+
+/**
+ * __usePreviewPostQuery__
+ *
+ * To run a query within a React component, call `usePreviewPostQuery` and pass it any options that fit your needs.
+ * When your component renders, `usePreviewPostQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = usePreviewPostQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *      idType: // value for 'idType'
+ *   },
+ * });
+ */
+export function usePreviewPostQuery(baseOptions: Apollo.QueryHookOptions<PreviewPostQuery, PreviewPostQueryVariables>) {
+        return Apollo.useQuery<PreviewPostQuery, PreviewPostQueryVariables>(PreviewPostDocument, baseOptions);
+      }
+export function usePreviewPostLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<PreviewPostQuery, PreviewPostQueryVariables>) {
+          return Apollo.useLazyQuery<PreviewPostQuery, PreviewPostQueryVariables>(PreviewPostDocument, baseOptions);
+        }
+export type PreviewPostQueryHookResult = ReturnType<typeof usePreviewPostQuery>;
+export type PreviewPostLazyQueryHookResult = ReturnType<typeof usePreviewPostLazyQuery>;
+export type PreviewPostQueryResult = Apollo.QueryResult<PreviewPostQuery, PreviewPostQueryVariables>;
+export function refetchPreviewPostQuery(variables?: PreviewPostQueryVariables) {
+      return { query: PreviewPostDocument, variables: variables }
     }

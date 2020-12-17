@@ -1,13 +1,24 @@
 query getPosts {
-    posts(first: 5) {
-      edges {
-        node {
-          title
-          slug
-          date
-          featuredImage {
+  posts(first: 20, where: { orderby: { field: DATE, order: DESC } }) {
+    edges {
+      node {
+        title
+        excerpt
+        slug
+        date
+        featuredImage {
           node {
             sourceUrl
+          }
+        }
+        author {
+          node {
+            name
+            firstName
+            lastName
+            avatar {
+              url
+            }
           }
         }
       }

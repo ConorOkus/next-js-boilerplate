@@ -2,24 +2,27 @@ import React from "react";
 import Link from "next/link";
 import Head from "../components/Head";
 import Nav from "../components/Nav";
-import { GetStaticProps, InferGetStaticPropsType } from "next";
 import { initializeApollo } from "../apollo/client";
 import { GetPostsDocument, useGetPostsQuery } from "../types/types";
 
-function Home() {
+export default function Home() {
   const { data } = useGetPostsQuery();
 
   return (
     <>
       <h1>Hello World</h1>
       {data.posts.edges.map((p) => (
-        <p>{p.node.slug}</p>
+        <>
+          <p>{p.node.title}</p>
+          <p>{p.node.date}</p>
+          <p>{p.node.slug}</p>
+        </>
       ))}
     </>
   );
 }
 
-export const getStaticProps: GetStaticProps = async () => {
+export async function getStaticProps() {
   const apolloClient = initializeApollo();
 
   await apolloClient.query({
@@ -31,6 +34,4 @@ export const getStaticProps: GetStaticProps = async () => {
       initialApolloState: apolloClient.cache.extract(),
     },
   };
-};
-
-export default Home;
+}
